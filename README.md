@@ -15,6 +15,12 @@ This project is part of a course on [JustDjango](https://learn.justdjango.com). 
 
 To have the project up and running, create a .env file in the root of this project and enter the environment variables according to the `.template.env` file.
 
+You will need to set this environment variable so that it reads the `.env` file:
+
+```
+DJANGO_READ_DOT_ENV_FILE=True
+```
+
 ### Type checks
 
 Running type checks with mypy:
