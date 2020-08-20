@@ -42,9 +42,10 @@
         {% endfor %}
     {% endif %}
 
-    {% block content %}
-      <p>Use this document as a way to quick start any new project.</p>
-    {% endblock content %}
+    <div class="max-w-5xl mx-auto px-2 sm:px-4 lg:px-8">
+      {% block content %}
+      {% endblock content %}
+    </div>
 
     {% block modal %}{% endblock modal %}
 

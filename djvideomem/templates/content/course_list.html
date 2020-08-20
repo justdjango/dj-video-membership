@@ -1,9 +1,33 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="max-w-5xl mx-auto px-2 sm:px-4 lg:px-8">
-        {% for course in object_list %}
-            <p>{{ course.name }}</p>
-        {% endfor %}
+    <section class="text-gray-700 body-font">
+    <div class="container px-5 py-24 mx-auto">
+        <div class="flex flex-wrap w-full mb-20">
+            <div class="lg:w-1/2 w-full mb-6 lg:mb-0">
+                <h1 class="sm:text-3xl text-2xl font-medium title-font mb-2 text-gray-900">Video Membership Project</h1>
+                <div class="h-1 w-20 bg-teal-500 rounded"></div>
+            </div>
+            <p class="lg:w-1/2 w-full leading-relaxed text-base">
+                Here you can find courses. This website is built with Django
+            </p>
+        </div>
+        <div class="flex flex-wrap -m-4">
+            {% for course in object_list %}
+            <div class="xl:w-1/4 md:w-1/2 p-4">
+                <div class="bg-gray-100 p-6 rounded-lg">
+                <img class="h-40 rounded w-full object-cover object-center mb-6" src="{{ course.thumbnail.url }}" alt="content">
+                <h3 class="tracking-widest text-teal-500 text-xs font-medium title-font">SUBTITLE</h3>
+                <a href="{% url 'content:course-detail' course.slug %}">
+                <h2 class="text-lg text-gray-900 font-medium title-font mb-4">
+                    {{ course.name }}
+                </h2>
+                </a>
+                <p class="leading-relaxed text-base">{{ course.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
+    </section>
 {% endblock content %}
