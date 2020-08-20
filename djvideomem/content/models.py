@@ -1,15 +1,20 @@
 from django.db import models
 from django.db.models.signals import pre_save, post_save
 from django.utils.text import slugify
+from django.shortcuts import reverse
 
 
 class Course(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
     thumbnail = models.ImageField(upload_to="thumbnails/")
+    description = models.TextField()
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return reverse("content:course-detail", kwargs={"slug": self.slug})
 
 
 class Video(models.Model):
@@ -21,6 +26,12 @@ class Video(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_absolute_url(self):
+        return reverse("content:video-detail", kwargs={
+            "video_slug": self.slug,
+            "slug": self.course.slug
+        })
 
 
 def pre_save_course(sender, instance, *args, **kwargs):
