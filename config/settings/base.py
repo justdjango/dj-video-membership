@@ -76,6 +76,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "djvideomem.content.apps.ContentConfig",
+    "djvideomem.payment.apps.PaymentConfig",
     "djvideomem.users.apps.UsersConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
