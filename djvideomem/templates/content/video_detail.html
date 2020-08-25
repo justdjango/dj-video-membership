@@ -10,7 +10,11 @@
             {% endfor %}
         </div>
         <div class="md:w-3/4 md:mt-0">
+            {% if has_permission %}
             <iframe src="https://player.vimeo.com/video/{{ video.vimeo_id }}" width="640" height="480" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+            {% else %}
+            <p>You do not have permission to view this course. Upgrade your subscription to start</p>
+            {% endif %}
         </div>
         <div class="block md:hidden w-full mt-5 py-5">
             {% for video in video.course.videos.all %}

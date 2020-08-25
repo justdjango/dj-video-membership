@@ -30,6 +30,7 @@ class Subscription(models.Model):
 
 
 class Course(models.Model):
+    pricing_tiers = models.ManyToManyField(Pricing, blank=True)
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
     thumbnail = models.ImageField(upload_to="thumbnails/")
