@@ -10,8 +10,7 @@
             {% endfor %}
         </div>
         <div class="md:w-3/4 md:mt-0">
-            video {{ video.vimeo_id }}
-            <p>{{ video.description }}</p>
+            <iframe src="https://player.vimeo.com/video/{{ video.vimeo_id }}" width="640" height="480" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
         </div>
         <div class="block md:hidden w-full mt-5 py-5">
             {% for video in video.course.videos.all %}
