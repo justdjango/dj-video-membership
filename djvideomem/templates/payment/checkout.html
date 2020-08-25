@@ -1,23 +1,47 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/stripe.css' %}" />
 <script src="https://js.stripe.com/v3/"></script>
 {% endblock extra_head %}
 
 {% block content %}
-<form id="subscription-form">
-    <div id="card-element" class="MyCardElement">
-      <!-- Elements will create input elements here -->
+  <div class="flex justify-center mx-auto">
+    <div class="py-3">
+      <div class="border border-gray-200 rounded shadow-md px-3 py-3">
+        <h2 class="text-xl text-center text-gray-500">
+          Enroll for the {{ pricing_tier.name }} membership
+        </h2>
+        <p class="text-3xl text-center text-gray-800">
+          {% if pricing_tier.currency == "usd" %}
+          ${{ pricing_tier.price }}/mo
+          {% else %}
+          €{{ pricing_tier.price }}/mo
+          {% endif %}
+        </p>
+      </div>
+      <div class="mt-3">
+        <form id="subscription-form">
+          {% csrf_token %}
+          <div id="card-element"><!--Stripe.js injects the Card Element--></div>
+          <button id="submit" type="submit">
+              <div class="spinner hidden" id="spinner"></div>
+              <span id="button-text">Pay</span>
+          </button>
+          <p id="card-errors" role="alert"></p>
+        </form>
+      </div>
     </div>
-
-    <!-- We'll put the error messages in this element -->
-    <div id="card-errors" role="alert"></div>
-    <button type="submit">Subscribe</button>
-</form>
+  </div>
 {% endblock content %}
 
+{% block javascript %}
 <script>
-var stripe = Stripe('{{ STRIPE_PUBLIC_KEY }}');
+
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+var stripe = Stripe("{{ STRIPE_PUBLIC_KEY }}");
 var elements = stripe.elements();
 
 // Set up Stripe.js and Elements to use in checkout form
@@ -37,10 +61,12 @@ var style = {
   }
 };
 
-var cardElement = elements.create("card", { style: style });
-cardElement.mount("#card-element");
+var priceId = "{{ pricing_tier.stripe_price_id }}"
 
-cardElement.on('change', showCardError);
+var card = elements.create("card", { style: style });
+card.mount("#card-element");
+
+card.on('change', showCardError);
 
 function showCardError(event) {
   let displayError = document.getElementById('card-errors');
@@ -52,15 +78,16 @@ function showCardError(event) {
 }
 
 var form = document.getElementById('subscription-form');
-​
+
 form.addEventListener('submit', function (ev) {
   ev.preventDefault();
-​
+  changeLoadingState(true);
+
   // If a previous payment was attempted, get the latest invoice
   const latestInvoicePaymentIntentStatus = localStorage.getItem(
     'latestInvoicePaymentIntentStatus'
   );
-​
+
   if (latestInvoicePaymentIntentStatus === 'requires_payment_method') {
     const invoiceId = localStorage.getItem('latestInvoiceId');
     const isPaymentRetry = true;
@@ -75,10 +102,10 @@ form.addEventListener('submit', function (ev) {
     createPaymentMethod({ card });
   }
 });
-​
+
 function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
   // Set up payment method for recurring usage
-​
+
   stripe
     .createPaymentMethod({
       type: 'card',
@@ -86,12 +113,12 @@ function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
     })
     .then((result) => {
       if (result.error) {
+        changeLoadingState(false);
         displayError(result);
       } else {
         if (isPaymentRetry) {
           // Update the payment method and retry invoice payment
           retryInvoiceWithNewPaymentMethod({
-            customerId: customerId,
             paymentMethodId: result.paymentMethod.id,
             invoiceId: invoiceId,
             priceId: priceId,
@@ -99,7 +126,6 @@ function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
         } else {
           // Create the subscription
           createSubscription({
-            customerId: customerId,
             paymentMethodId: result.paymentMethod.id,
             priceId: priceId,
           });
@@ -108,15 +134,15 @@ function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
     });
 }
 
-function createSubscription({ customerId, paymentMethodId, priceId }) {
+function createSubscription({ paymentMethodId, priceId }) {
   return (
-    fetch('/create-subscription', {
+    fetch("{% url 'payment:create-subscription' %}", {
       method: 'post',
       headers: {
-        'Content-type': 'application/json',
+        'Content-Type': "application/json",
+        'X-CSRFToken': csrftoken
       },
       body: JSON.stringify({
-        customerId: customerId,
         paymentMethodId: paymentMethodId,
         priceId: priceId,
       }),
@@ -152,6 +178,7 @@ function createSubscription({ customerId, paymentMethodId, priceId }) {
       // No more actions required. Provision your service for the user.
       .then(onSubscriptionComplete)
       .catch((error) => {
+        changeLoadingState(false);
         // An error has happened. Display the failure to the user here.
         // We utilize the HTML element we created.
         showCardError(error);
@@ -204,6 +231,7 @@ function handlePaymentThatRequiresCustomerAction({
         }
       })
       .catch((error) => {
+        changeLoadingState(false);
         displayError(error);
       });
   } else {
@@ -241,6 +269,8 @@ function handleRequiresPaymentMethod({
 function onSubscriptionComplete(result) {
   // Payment was successful.
   if (result.subscription.status === 'active') {
+      console.log("Complete")
+      window.location.href = "{% url 'users:detail' request.user.username %}"
     // Change your UI to show a success message to your customer.
     // Call your backend to grant access to your service based on
     // `result.subscription.items.data[0].price.product` the customer subscribed to.
@@ -248,19 +278,18 @@ function onSubscriptionComplete(result) {
 }
 
 function retryInvoiceWithNewPaymentMethod({
-  customerId,
   paymentMethodId,
   invoiceId,
   priceId
 }) {
   return (
-    fetch('/retry-invoice', {
+    fetch("{% url 'payment:retry-invoice' %}", {
       method: 'post',
       headers: {
-        'Content-type': 'application/json',
+        'Content-Type': "application/json",
+        'X-CSRFToken': csrftoken
       },
       body: JSON.stringify({
-        customerId: customerId,
         paymentMethodId: paymentMethodId,
         invoiceId: invoiceId,
       }),
@@ -295,6 +324,7 @@ function retryInvoiceWithNewPaymentMethod({
       // No more actions required. Provision your service for the user.
       .then(onSubscriptionComplete)
       .catch((error) => {
+        changeLoadingState(false);
         // An error has happened. Display the failure to the user here.
         // We utilize the HTML element we created.
         displayError(error);
@@ -302,4 +332,18 @@ function retryInvoiceWithNewPaymentMethod({
   );
 }
 
+function changeLoadingState(isLoading) {
+  if (isLoading) {
+    document.querySelector('#button-text').classList.add('hidden');
+    document.querySelector('#spinner').classList.remove('hidden');
+    document.querySelector('#subscription-form button').disabled = true;
+  } else {
+    document.querySelector('#button-text').classList.remove('hidden');
+    document.querySelector('#spinner').classList.add('hidden');
+    document.querySelector('#subscription-form button').disabled = false;
+  }
+}
+
 </script>
+
+{% endblock javascript %}

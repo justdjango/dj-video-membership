@@ -18,6 +18,9 @@
           <a href="{% url 'users:detail' request.user.username  %}" class="block mt-4 lg:inline-block lg:mt-0 text-teal-200 hover:text-white mr-4">
             My Profile
           </a>
+          <a href="{% url 'payment:enroll' %}" class="block mt-4 lg:inline-block lg:mt-0 text-teal-200 hover:text-white mr-4">
+            Enroll
+          </a>
           <a href="{% url 'account_logout' %}" class="block mt-4 lg:inline-block lg:mt-0 text-teal-200 hover:text-white mr-4">
             Logout
           </a>
