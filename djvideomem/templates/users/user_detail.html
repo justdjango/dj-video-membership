@@ -23,6 +23,7 @@
   <div class="col-sm-12">
     <a class="btn btn-primary" href="{% url 'users:update' %}" role="button">My Info</a>
     <a class="btn btn-primary" href="{% url 'account_email' %}" role="button">E-Mail</a>
+    <a class="btn btn-primary" href="{% url 'users:subscription' request.user.username %}" role="button">My subscription</a>
     <!-- Your Stuff: Custom user template urls -->
   </div>
 

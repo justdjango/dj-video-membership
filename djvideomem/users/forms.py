@@ -1,8 +1,14 @@
 from django.contrib.auth import forms, get_user_model
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from django import forms as normal_forms
+
 
 User = get_user_model()
+
+
+class CancelSubscriptionForm(normal_forms.Form):
+    hidden = normal_forms.HiddenInput()
 
 
 class UserChangeForm(forms.UserChangeForm):
