@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/stripe.css' %}" />
+{% endblock extra_head %}
+
+{% block content %}
+  <div class="flex justify-center mx-auto">
+    <div class="py-3">
+      <div class="border border-gray-200 rounded shadow-md px-3 py-3">
+        <h2 class="text-xl text-center text-gray-500">
+          Change to the {{ pricing_tier.name }} membership
+        </h2>
+        <p class="text-3xl text-center text-gray-800">
+          {% if pricing_tier.currency == "usd" %}
+          ${{ pricing_tier.price }}/mo
+          {% else %}
+          €{{ pricing_tier.price }}/mo
+          {% endif %}
+        </p>
+      </div>
+      <div class="mt-3">
+        <form id="change-form">
+          {% csrf_token %}
+          <button id="submit" type="submit">
+              <div class="spinner hidden" id="spinner"></div>
+              <span id="button-text">Pay</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascript %}
+<script>
+
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+function updateSubscription(priceId, subscriptionId) {
+  return fetch("{% url 'payment:change-subscription' %}", {
+    method: 'post',
+    headers: {
+      'Content-type': 'application/json',
+      'X-CSRFToken': csrftoken
+    },
+    body: JSON.stringify({
+      priceId: "{{ pricing_tier.stripe_price_id }}",
+    }),
+  })
+    .then(response => {
+      return response.json();
+    })
+    .then(response => {
+      window.location.href = "{% url 'users:subscription' request.user.username %}"
+      return response;
+    });
+}
+
+function changeLoadingState(isLoading) {
+  if (isLoading) {
+    document.querySelector('#button-text').classList.add('hidden');
+    document.querySelector('#spinner').classList.remove('hidden');
+    document.querySelector('#change-form button').disabled = true;
+  } else {
+    document.querySelector('#button-text').classList.remove('hidden');
+    document.querySelector('#spinner').classList.add('hidden');
+    document.querySelector('#change-form button').disabled = false;
+  }
+}
+
+var form = document.getElementById('change-form');
+
+form.addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  changeLoadingState(true);
+  updateSubscription()
+});
+
+</script>
+{% endblock javascript %}

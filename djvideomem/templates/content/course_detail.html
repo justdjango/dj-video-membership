@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <section class="text-gray-700 body-font">
+    <div class="py-16 flex flex-wrap">
+        <div class="flex flex-wrap w-full">
+        <div class="hidden md:block md:w-1/4 md:pr-10 md:py-6">
+            {% for video in course.videos.all %}
+                {% include 'content/snippets/video_step.html' with video=video %}
+            {% endfor %}
+        </div>
+        <div class="md:w-3/4 md:mt-0">
+            <img class="w-full object-cover object-center rounded-lg" src="{{ object.thumbnail.url }}" alt="step">
+            <p class="text-gray-500">{{ object.description }}</p>
+        </div>
+        <div class="block md:hidden w-full mt-5 py-5">
+            {% for video in course.videos.all %}
+                {% include 'content/snippets/video_step.html' with video=video %}
+            {% endfor %}
+        </div>
+    </div>
+    </section>
+{% endblock content %}

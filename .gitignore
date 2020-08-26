@@ -277,3 +277,5 @@ djvideomem/media/
 .env
 .envs/*
 !.envs/.local/
+
+ngrok
