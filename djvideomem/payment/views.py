@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 import stripe
@@ -74,23 +75,32 @@ def webhook(request):
         # Send notification to your user that the trial will end
         print(data)
 
+    if event_type == 'customer.subscription.updated':
+        print(data)
+
     return HttpResponse()
 
 class EnrollView(generic.TemplateView):
     template_name = "payment/enroll.html"
 
 
-class PaymentView(generic.TemplateView):
-    template_name = "payment/checkout.html"
+def PaymentView(request, slug):
+    subscription = request.user.subscription
+    pricing = get_object_or_404(Pricing, slug=slug)
 
-    def get_context_data(self, **kwargs):
-        context = super(PaymentView, self).get_context_data(**kwargs)
-        pricing = get_object_or_404(Pricing, slug=kwargs["slug"])
-        context.update({
-            "pricing_tier": pricing,
-            "STRIPE_PUBLIC_KEY": settings.STRIPE_PUBLIC_KEY
-        })
-        return context
+    if subscription.pricing == pricing and subscription.is_active:
+        messages.info(request, "You are already enrolled for this package")
+        return redirect("payment:enroll")
+
+    context = {
+        "pricing_tier": pricing,
+        "STRIPE_PUBLIC_KEY": settings.STRIPE_PUBLIC_KEY
+    }
+
+    if subscription.is_active and subscription.pricing.stripe_price_id != "django-free-trial":
+        return render(request, "payment/change.html", context)
+    
+    return render(request, "payment/checkout.html", context)
 
 
 class CreateSubscriptionView(APIView):
@@ -129,7 +139,6 @@ class CreateSubscriptionView(APIView):
 
 
 class RetryInvoiceView(APIView):
-
     def post(self, request, *args, **kwargs):
         data = request.data
         customer_id = request.user.stripe_customer_id
@@ -156,6 +165,33 @@ class RetryInvoiceView(APIView):
 
             return Response(data)
         except Exception as e:
+
             return Response({
                 "error": {'message': str(e)}
             })
+
+
+class ChangeSubscriptionView(APIView):
+    def post(self, request, *args, **kwargs):
+        print(request.data)
+        subscription_id = request.user.subscription.stripe_subscription_id
+        subscription = stripe.Subscription.retrieve(subscription_id)
+        try:
+            updatedSubscription = stripe.Subscription.modify(
+                subscription_id,
+                cancel_at_period_end=False,
+                items=[{
+                    'id': subscription['items']['data'][0].id,
+                    'price': request.data["priceId"],
+                }],
+                proration_behavior="always_invoice"
+            )
+
+            data = {}
+            data.update(updatedSubscription)
+            return Response(data)
+        except Exception as e:
+            return Response({
+                "error": {'message': str(e)}
+            })
+

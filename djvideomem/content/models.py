@@ -32,6 +32,10 @@ class Subscription(models.Model):
     def __str__(self):
         return self.user.email
 
+    @property
+    def is_active(self):
+        return self.status == "active" or self.status == "trialing"
+
 
 class Course(models.Model):
     pricing_tiers = models.ManyToManyField(Pricing, blank=True)

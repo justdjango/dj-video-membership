@@ -22,8 +22,9 @@ class VideoDetailView(LoginRequiredMixin, generic.DetailView):
         course = self.get_course()
         subscription = self.request.user.subscription
         pricing_tier = subscription.pricing
+        subscription_is_active = subscription.status == "active" or subscription.status == "trialing" 
         context.update({
-            "has_permission": pricing_tier in course.pricing_tiers.all()
+            "has_permission": pricing_tier in course.pricing_tiers.all() and subscription_is_active
         })
         return context
 
