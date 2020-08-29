@@ -18,7 +18,7 @@ To have the project up and running, create a .env file in the root of this proje
 You will need to set this environment variable so that it reads the `.env` file:
 
 ```
-DJANGO_READ_DOT_ENV_FILE=True
+export DJANGO_READ_DOT_ENV_FILE=True
 ```
 
 ### Type checks
